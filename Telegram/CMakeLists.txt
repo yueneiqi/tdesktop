@@ -1675,6 +1675,7 @@ PRIVATE
     window/window_chat_switch_process.cpp
     window/window_chat_switch_process.h
     window/window_connecting_widget.cpp
+    window/window_proxy_button_visibility.cpp
     window/window_connecting_widget.h
     window/window_controller.cpp
     window/window_controller.h

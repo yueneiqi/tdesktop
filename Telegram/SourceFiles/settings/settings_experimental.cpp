@@ -28,6 +28,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "mtproto/session_private.h"
 #include "webview/webview_embed.h"
 #include "window/main_window.h"
+#include "window/window_connecting_widget.h"
 #include "window/window_peer_menu.h"
 #include "window/window_session_controller.h"
 #include "window/window_controller.h"
@@ -84,6 +85,9 @@ void AddOption(
 			return;
 		}
 		option.set(toggled);
+		if (&option == &base::options::lookup<bool>(Window::kOptionKeepProxyButtonVisible)) {
+			Window::NotifyKeepProxyButtonVisibleChanged();
+		}
 		if (restarter) {
 			restarter->callOnce(st::settingsButtonNoIcon.toggle.duration);
 		}
@@ -123,7 +127,12 @@ void SetupExperimental(
 			tr::lng_settings_experimental_restore(),
 			st::settingsButtonNoIcon));
 		reset->addClickHandler([=] {
+			auto &keepProxyOption = base::options::lookup<bool>(Window::kOptionKeepProxyButtonVisible);
+			const auto wasKeepProxyVisible = keepProxyOption.value();
 			base::options::reset();
+			if (keepProxyOption.value() != wasKeepProxyVisible) {
+				Window::NotifyKeepProxyButtonVisibleChanged();
+			}
 			wrap->hide(anim::type::normal);
 		});
 		Ui::AddSkip(inner, st::settingsCheckboxesSkip);
@@ -159,6 +168,7 @@ void SetupExperimental(
 	addToggle(Core::kOptionSkipUrlSchemeRegister);
 	addToggle(Data::kOptionExternalVideoPlayer);
 	addToggle(Window::kOptionNewWindowsSizeAsFirst);
+	addToggle(Window::kOptionKeepProxyButtonVisible);
 	addToggle(MTP::details::kOptionPreferIPv6);
 	if (base::options::lookup<bool>(kOptionFastButtonsMode).value()) {
 		addToggle(kOptionFastButtonsMode);

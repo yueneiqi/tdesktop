@@ -21,6 +21,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "boxes/abstract_box.h"
 #include "lang/lang_keys.h"
 #include "styles/style_window.h"
+#include "window/window_proxy_button_visibility.h"
 
 #include <QtGui/QWindow>
 
@@ -246,6 +247,11 @@ ConnectionState::ConnectionState(
 	) | rpl::start_with_next([=] {
 		refreshState();
 	}, _lifetime);
+
+	KeepProxyButtonVisibleChangesEvents(
+	) | rpl::start_with_next([=](bool) {
+		applyState(_state);
+	}, _lifetime);
 }
 
 void ConnectionState::createWidget() {
@@ -435,11 +441,13 @@ auto ConnectionState::computeLayout(const State &state) const -> Layout {
 	auto result = Layout();
 	result.proxyEnabled = state.useProxy;
 	result.progressShown = (state.type != State::Type::Connected);
+	const auto showAlways = KeepProxyButtonVisibleOption().value();
 	result.visible = state.exposed
 		&& !state.updateReady
 		&& (state.useProxy
 			|| state.type == State::Type::Connecting
-			|| state.type == State::Type::Waiting);
+			|| state.type == State::Type::Waiting
+			|| showAlways);
 	switch (state.type) {
 	case State::Type::Connecting:
 		result.text = state.underCursor
