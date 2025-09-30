@@ -20,6 +20,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "boxes/connection_box.h"
 #include "boxes/abstract_box.h"
 #include "lang/lang_keys.h"
+#include "base/options.h"
 #include "styles/style_window.h"
 
 #include <QtGui/QWindow>
@@ -31,6 +32,12 @@ constexpr auto kIgnoreStartConnectingFor = crl::time(3000);
 constexpr auto kConnectingStateDelay = crl::time(1000);
 constexpr auto kRefreshTimeout = crl::time(200);
 constexpr auto kMinimalWaitingStateDuration = crl::time(4000);
+
+base::options::toggle ProxyAlwaysVisibleOption({
+	.id = kOptionProxyAlwaysVisible,
+	.name = "Keep proxy button always visible",
+	.description = "Keep the proxy button visible even when no proxy is enabled. Useful for quick access to proxy settings.",
+});
 
 class Progress : public Ui::RpWidget {
 public:
@@ -83,6 +90,12 @@ rpl::producer<> Progress::animationStepRequests() const {
 }
 
 } // namespace
+
+const char kOptionProxyAlwaysVisible[] = "proxy-always-visible";
+
+bool ProxyAlwaysVisible() {
+	return ProxyAlwaysVisibleOption.value();
+}
 
 class ConnectionState::Widget : public Ui::AbstractButton {
 public:
@@ -438,6 +451,7 @@ auto ConnectionState::computeLayout(const State &state) const -> Layout {
 	result.visible = state.exposed
 		&& !state.updateReady
 		&& (state.useProxy
+			|| ProxyAlwaysVisible()
 			|| state.type == State::Type::Connecting
 			|| state.type == State::Type::Waiting);
 	switch (state.type) {

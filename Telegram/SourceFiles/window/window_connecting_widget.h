@@ -21,6 +21,9 @@ class Account;
 
 namespace Window {
 
+extern const char kOptionProxyAlwaysVisible[];
+[[nodiscard]] bool ProxyAlwaysVisible();
+
 class ConnectionState {
 public:
 	ConnectionState(
