@@ -31,6 +31,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "window/window_connecting_widget.h"
 #include "window/window_peer_menu.h"
 #include "window/window_session_controller.h"
+#include "window/window_proxy_button_visibility.h"
+
 #include "window/window_controller.h"
 #include "window/notifications_manager.h"
 #include "storage/localimageloader.h"
@@ -85,7 +87,7 @@ void AddOption(
 			return;
 		}
 		option.set(toggled);
-		if (&option == &base::options::lookup<bool>(Window::kOptionKeepProxyButtonVisible)) {
+		if (&option == &Window::KeepProxyButtonVisibleOption()) {
 			Window::NotifyKeepProxyButtonVisibleChanged();
 		}
 		if (restarter) {
@@ -127,7 +129,7 @@ void SetupExperimental(
 			tr::lng_settings_experimental_restore(),
 			st::settingsButtonNoIcon));
 		reset->addClickHandler([=] {
-			auto &keepProxyOption = base::options::lookup<bool>(Window::kOptionKeepProxyButtonVisible);
+			auto &keepProxyOption = Window::KeepProxyButtonVisibleOption();
 			const auto wasKeepProxyVisible = keepProxyOption.value();
 			base::options::reset();
 			if (keepProxyOption.value() != wasKeepProxyVisible) {
@@ -168,7 +170,13 @@ void SetupExperimental(
 	addToggle(Core::kOptionSkipUrlSchemeRegister);
 	addToggle(Data::kOptionExternalVideoPlayer);
 	addToggle(Window::kOptionNewWindowsSizeAsFirst);
-	addToggle(Window::kOptionKeepProxyButtonVisible);
+	AddOption(
+		window,
+		container,
+		Window::KeepProxyButtonVisibleOption(),
+		(reset
+			? (reset->clicks() | rpl::to_empty)
+			: rpl::producer<>()));
 	addToggle(MTP::details::kOptionPreferIPv6);
 	if (base::options::lookup<bool>(kOptionFastButtonsMode).value()) {
 		addToggle(kOptionFastButtonsMode);
