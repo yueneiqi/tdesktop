@@ -84,12 +84,10 @@ void AddOption(
 				tr::lng_settings_experimental_irrelevant(tr::now));
 			return;
 		}
-		const auto optionId = option.id();
+		const auto isProxyAlwaysVisible = (&option == &base::options::lookup<bool>(Window::kOptionProxyAlwaysVisible));
 		option.set(toggled);
-		if (optionId == QString::fromUtf8(Window::kOptionProxyAlwaysVisible)) {
-			crl::on_main([] {
-				Window::NotifyProxyAlwaysVisibleChange();
-			});
+		if (isProxyAlwaysVisible) {
+			Window::NotifyProxyAlwaysVisibleChange();
 		}
 		if (restarter) {
 			restarter->callOnce(st::settingsButtonNoIcon.toggle.duration);
