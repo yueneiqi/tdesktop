@@ -39,6 +39,8 @@ base::options::toggle ProxyAlwaysVisibleOption({
 	.description = "Keep the proxy button visible even when no proxy is enabled. Useful for quick access to proxy settings.",
 });
 
+rpl::event_stream<> ProxyAlwaysVisibleChanges;
+
 class Progress : public Ui::RpWidget {
 public:
 	Progress(QWidget *parent);
@@ -95,6 +97,14 @@ const char kOptionProxyAlwaysVisible[] = "proxy-always-visible";
 
 bool ProxyAlwaysVisible() {
 	return ProxyAlwaysVisibleOption.value();
+}
+
+rpl::producer<> ProxyAlwaysVisibleValue() {
+	return ProxyAlwaysVisibleChanges.events();
+}
+
+void NotifyProxyAlwaysVisibleChange() {
+	ProxyAlwaysVisibleChanges.fire({});
 }
 
 class ConnectionState::Widget : public Ui::AbstractButton {
@@ -256,6 +266,11 @@ ConnectionState::ConnectionState(
 	rpl::combine(
 		Core::App().settings().proxy().connectionTypeValue(),
 		rpl::single(QRect()) | rpl::then(_parent->paintRequest())
+	) | rpl::start_with_next([=] {
+		refreshState();
+	}, _lifetime);
+
+	ProxyAlwaysVisibleValue(
 	) | rpl::start_with_next([=] {
 		refreshState();
 	}, _lifetime);

@@ -23,6 +23,8 @@ namespace Window {
 
 extern const char kOptionProxyAlwaysVisible[];
 [[nodiscard]] bool ProxyAlwaysVisible();
+[[nodiscard]] rpl::producer<> ProxyAlwaysVisibleValue();
+void NotifyProxyAlwaysVisibleChange();
 
 class ConnectionState {
 public:
