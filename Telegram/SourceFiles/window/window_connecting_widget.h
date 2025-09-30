@@ -46,6 +46,7 @@ private:
 		};
 		Type type = Type::Connected;
 		bool useProxy = false;
+		bool alwaysShowProxy = false;
 		bool exposed = false;
 		bool underCursor = false;
 		bool updateReady = false;

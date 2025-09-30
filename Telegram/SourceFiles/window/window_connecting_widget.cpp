@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "window/window_connecting_widget.h"
 
+#include "window/window_proxy_button_visibility.h"
 #include "ui/widgets/buttons.h"
 #include "ui/effects/radial_animation.h"
 #include "ui/painter.h"
@@ -206,6 +207,7 @@ void ConnectionState::Widget::ProxyIcon::paintEvent(QPaintEvent *e) {
 bool ConnectionState::State::operator==(const State &other) const {
 	return (type == other.type)
 		&& (useProxy == other.useProxy)
+		&& (alwaysShowProxy == other.alwaysShowProxy)
 		&& (underCursor == other.underCursor)
 		&& (updateReady == other.updateReady)
 		&& (waitTillRetry == other.waitTillRetry);
@@ -243,6 +245,11 @@ ConnectionState::ConnectionState(
 	rpl::combine(
 		Core::App().settings().proxy().connectionTypeValue(),
 		rpl::single(QRect()) | rpl::then(_parent->paintRequest())
+	) | rpl::start_with_next([=] {
+		refreshState();
+	}, _lifetime);
+
+	ProxyAlwaysVisibleValue(
 	) | rpl::start_with_next([=] {
 		refreshState();
 	}, _lifetime);
@@ -308,19 +315,20 @@ void ConnectionState::refreshState() {
 		const auto ready = (Checker().state() == Checker::State::Ready);
 		const auto state = _account->mtp().dcstate();
 		const auto proxy = Core::App().settings().proxy().isEnabled();
+		const auto alwaysShow = ProxyAlwaysVisible();
 		if (state == MTP::ConnectingState
 			|| state == MTP::DisconnectedState
 			|| (state < 0 && state > -600)) {
-			return { State::Type::Connecting, proxy, exposed, under, ready };
+			return { State::Type::Connecting, proxy, alwaysShow, exposed, under, ready };
 		} else if (state < 0
 			&& state >= -kMinimalWaitingStateDuration
 			&& _state.type != State::Type::Waiting) {
-			return { State::Type::Connecting, proxy, exposed, under, ready };
+			return { State::Type::Connecting, proxy, alwaysShow, exposed, under, ready };
 		} else if (state < 0) {
 			const auto wait = ((-state) / 1000) + 1;
-			return { State::Type::Waiting, proxy, exposed, under, ready, wait };
+			return { State::Type::Waiting, proxy, alwaysShow, exposed, under, ready, wait };
 		}
-		return { State::Type::Connected, proxy, exposed, under, ready };
+		return { State::Type::Connected, proxy, alwaysShow, exposed, under, ready };
 	}();
 	if (state.exposed && state.waitTillRetry > 0) {
 		_refreshTimer.callOnce(kRefreshTimeout);
@@ -438,6 +446,7 @@ auto ConnectionState::computeLayout(const State &state) const -> Layout {
 	result.visible = state.exposed
 		&& !state.updateReady
 		&& (state.useProxy
+			|| ProxyAlwaysVisible()
 			|| state.type == State::Type::Connecting
 			|| state.type == State::Type::Waiting);
 	switch (state.type) {
